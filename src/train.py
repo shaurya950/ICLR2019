@@ -49,7 +49,7 @@ def step(split, epoch, opt, dataLoader, model, criterion, optimizer = None):
       input_[0] = Flip(input_[0]).copy()
       inputFlip_var = torch.autograd.Variable(torch.from_numpy(input_).view(1, input_.shape[1], ref.inputRes, ref.inputRes)).float().cuda(opt.GPU)
       outputFlip = model(inputFlip_var)
-      outputFlip = ShuffleLR(Flip((outputFlip[0][opt.nStack - 1].data).cpu().numpy()[0])).reshape(1, ref.nJoints, 64, 64)
+      outputFlip = ShuffleLR(Flip((outputFlip[opt.nStack - 1].data).cpu().numpy()[0])).reshape(1, ref.nJoints, 64, 64)
       output_ = ((output[opt.nStack - 1].data).cpu().numpy() + outputFlip) / 2
       preds.append(finalPreds(output_, meta['center'], meta['scale'], meta['rotate'])[0])
       
