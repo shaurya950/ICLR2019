@@ -24,8 +24,6 @@ def step(split, epoch, opt, dataLoader, model, criterion, optimizer = None):
     target_var2 = torch.autograd.Variable(target2).float().cuda()
     #print( input_var)
     output = model(input_var)
-    output1 = output[0]
-    output2 = output[1]
     #print(output[-1].size())
     if opt.DEBUG >= 2:
       gt = getPreds(target.cpu().numpy()) * 4
@@ -37,13 +35,11 @@ def step(split, epoch, opt, dataLoader, model, criterion, optimizer = None):
       debugger.addPoint2D(gt[0], (0, 0, 255))
       debugger.showAllImg(pause = True)
     
-    loss = criterion(output1[0], target_var)
+    loss = criterion(output[0], target_var)
     for k in range(1, opt.nStack):
-      loss += criterion(output1[k], target_var)
-    for k in range(2):
-      loss += criterion(output2[k],target_var2)  
+      loss += criterion(output[k], target_var)
     Loss.update(loss.data[0], input.size(0))
-    Acc.update(Accuracy((output1[opt.nStack - 1].data).cpu().numpy(), (target_var.data).cpu().numpy()))
+    Acc.update(Accuracy((output[opt.nStack - 1].data).cpu().numpy(), (target_var.data).cpu().numpy()))
     if split == 'train':
       optimizer.zero_grad()
       loss.backward()
@@ -54,7 +50,7 @@ def step(split, epoch, opt, dataLoader, model, criterion, optimizer = None):
       inputFlip_var = torch.autograd.Variable(torch.from_numpy(input_).view(1, input_.shape[1], ref.inputRes, ref.inputRes)).float().cuda(opt.GPU)
       outputFlip = model(inputFlip_var)
       outputFlip = ShuffleLR(Flip((outputFlip[0][opt.nStack - 1].data).cpu().numpy()[0])).reshape(1, ref.nJoints, 64, 64)
-      output_ = ((output1[opt.nStack - 1].data).cpu().numpy() + outputFlip) / 2
+      output_ = ((output[opt.nStack - 1].data).cpu().numpy() + outputFlip) / 2
       preds.append(finalPreds(output_, meta['center'], meta['scale'], meta['rotate'])[0])
       
     Bar.suffix = '{split} Epoch: [{0}][{1}/{2}]| Total: {total:} | ETA: {eta:} | Loss {loss.avg:.6f} | Acc {Acc.avg:.6f} ({Acc.val:.6f})'.format(epoch, i, nIters, total=bar.elapsed_td, eta=bar.eta_td, loss=Loss, Acc=Acc, split = split)

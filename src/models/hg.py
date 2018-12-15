@@ -124,10 +124,17 @@ class MSSH(nn.Module):
 		self.maxpool = nn.MaxPool2d(kernel_size = 2,stride = 2)
 		self.hg1 = HourglassNet(nStack,nModules,nFeats,numOutput,4)
 		self.hg2 = HourglassNet(nStack,nModules,nFeats,numOutput,3)
+		self.conv = nn.Conv2d(16, 3, bias = True, kernel_size = 1, stride = 1)
+		self.up2 = nn.Upsample(scale_factor = 2)
 
 	def forward(self,x):
-		out1 = self.hg1(x)
-		x = self.maxpool(x)
+		x1 = self.maxpool(x)
+		x1 = self.maxpool(x1)
+		x1 = self.maxpool(x1)
 		out2 = self.hg2(x)
+		temp = self.conv(out2[-1])
+		temp = self.up2(temp)
+		temp = self.up2(temp)
+		out1 = self.hg1(x+temp)
 		#print(out2[-1].size())
-		return [out1,out2]
+		return out1
